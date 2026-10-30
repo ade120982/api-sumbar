@@ -1,7 +1,14 @@
 {
-  "buildCommand": "",
-  "devCommand": "uvicorn api:app --host 0.0.0.0 --port 8000",
+  "buildCommand": "pip install -r requirements.txt",
   "installCommand": "pip install -r requirements.txt",
   "framework": null,
-  "outputDirectory": null
+  "outputDirectory": null,
+  "functions": {
+    "api/index.py": {
+      "runtime": "@vercel/python@4.0.0"
+    }
+  },
+  "routes": [
+    { "src": "/(.*)", "dest": "api/index.py" }
+  ]
 }
