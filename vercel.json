@@ -1,14 +1,11 @@
 {
   "buildCommand": "uv pip install --system -r requirements.txt",
-  "installCommand": "uv pip install --system -r requirements.txt",
-  "framework": null,
-  "outputDirectory": null,
   "functions": {
-    "api/index.py": {
+    "index.py": {
       "runtime": "@vercel/python@4.0.0"
     }
   },
   "routes": [
-    { "src": "/(.*)", "dest": "api/index.py" }
+    { "src": "/(.*)", "dest": "index.py" }
   ]
 }
