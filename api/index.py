@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import csv
+import os
 
 app = FastAPI(
     title="Data Wilayah Indonesia — Sumatera Barat",
@@ -8,17 +9,30 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Baca CSV tanpa pandas — pakai modul bawaan Python
+# Cari lokasi file CSV
 data = []
-try:
-    with open("../data_sumatera_barat.csv", mode="r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            data.append(row)
-    print(f"Berhasil memuat {len(data)} baris data")
-except Exception as e:
-    print(f"Error membaca CSV: {e}")
-    data = []
+# Coba beberapa kemungkinan jalur
+csv_paths = [
+    os.path.join(os.path.dirname(__file__), "..", "data_sumatera_barat.csv"),
+    "data_sumatera_barat.csv",
+    "./data_sumatera_barat.csv"
+]
+
+loaded = False
+for path in csv_paths:
+    try:
+        with open(path, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            data = list(reader)
+            loaded = True
+            print(f"Berhasil baca dari: {path} — {len(data)} baris")
+            break
+    except Exception as e:
+        print(f"Gagal baca {path}: {e}")
+        continue
+
+if not loaded:
+    print("PERINGATAN: Tidak bisa membaca file CSV!")
 
 @app.get("/", summary="Semua Data Wilayah")
 def semua_data():
