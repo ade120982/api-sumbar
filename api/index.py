@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-import pandas as pd
+import csv
 
 app = FastAPI(
     title="Data Wilayah Indonesia — Sumatera Barat",
@@ -8,16 +8,20 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Baca CSV tanpa pandas — pakai modul bawaan Python
+data = []
 try:
-    df = pd.read_csv("../data_sumatera_barat.csv")
-    df = df.fillna("")
+    with open("../data_sumatera_barat.csv", mode="r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            data.append(row)
+    print(f"Berhasil memuat {len(data)} baris data")
 except Exception as e:
-    print(f"Error: {e}")
-    df = pd.DataFrame()
+    print(f"Error membaca CSV: {e}")
+    data = []
 
 @app.get("/", summary="Semua Data Wilayah")
 def semua_data():
-    data = df.to_dict(orient="records")
     return {
         "sumber": "https://emsifa.github.io/api-wilayah-indonesia/api",
         "jumlah": len(data),
@@ -26,18 +30,33 @@ def semua_data():
 
 @app.get("/kabupaten", summary="Daftar Kabupaten")
 def daftar_kabupaten():
-    if df.empty:
-        return {"jumlah": 0, "data": []}
-    kab = df[["Kode_Kabupaten", "Nama_Kabupaten"]].drop_duplicates()
-    return {"jumlah": len(kab), "data": kab.to_dict(orient="records")}
+    seen = set()
+    daftar = []
+    for row in data:
+        kode = row.get("Kode_Kabupaten", "").strip()
+        nama = row.get("Nama_Kabupaten", "").strip()
+        if kode and kode not in seen:
+            seen.add(kode)
+            daftar.append({"Kode_Kabupaten": kode, "Nama_Kabupaten": nama})
+    return {"jumlah": len(daftar), "data": daftar}
 
 @app.get("/kecamatan/{kode_kab}", summary="Kecamatan per Kabupaten")
 def kecamatan_di_kabupaten(kode_kab: str):
-    hasil = df[df["Kode_Kabupaten"] == kode_kab]
-    if hasil.empty:
+    hasil = []
+    nama_kab = ""
+    kode_input = kode_kab.strip()
+    for row in data:
+        if row.get("Kode_Kabupaten", "").strip() == kode_input:
+            if not nama_kab:
+                nama_kab = row.get("Nama_Kabupaten", "")
+            hasil.append({
+                "Kode_Kecamatan": row.get("Kode_Kecamatan", ""),
+                "Nama_Kecamatan": row.get("Nama_Kecamatan", "")
+            })
+    if not hasil:
         return JSONResponse({"pesan": "Kode kabupaten tidak ditemukan"}, status_code=404)
     return {
-        "kabupaten": hasil.iloc[0]["Nama_Kabupaten"],
+        "kabupaten": nama_kab,
         "jumlah": len(hasil),
-        "data": hasil[["Kode_Kecamatan", "Nama_Kecamatan"]].to_dict(orient="records")
+        "data": hasil
     }
