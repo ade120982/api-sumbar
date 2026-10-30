@@ -9,7 +9,7 @@ app = FastAPI(
 )
 
 try:
-    df = pd.read_csv("data_sumatera_barat.csv")
+    df = pd.read_csv("../data_sumatera_barat.csv")
     df = df.fillna("")
 except Exception as e:
     print(f"Error: {e}")
